@@ -1,0 +1,6 @@
+{
+    "sketch": "examples\\test\\test.ino",
+    "output": "build",
+    "configuration": "CDCOnBoot=default,PartitionScheme=default,CPUFreq=160,FlashFreq=80,UploadSpeed=921600,DebugLevel=none,EraseFlash=none",
+    "board": "esp32:esp32:lolin_c3_mini"
+}
