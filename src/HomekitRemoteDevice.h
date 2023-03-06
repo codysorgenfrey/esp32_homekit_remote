@@ -7,7 +7,7 @@
 #include <ArduinoJson.h>
 #include "HomekitRemoteBase.h"
 
-class HomekitRemoteDevice : public HomekitRemoteBase {
+class HomekitRemoteDevice : protected HomekitRemoteBase {
 protected:
   WebSocketsClient *webSocket;
   const char *deviceID;

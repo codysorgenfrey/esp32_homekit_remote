@@ -7,13 +7,11 @@
 #include <ArduinoJson.h>
 #include "HomekitRemoteBase.h"
 
-class HomekitRemoteDeviceServerSide : public HomekitRemoteBase {
+class HomekitRemoteDeviceServerSide : protected HomekitRemoteBase {
 protected:
   WebSocketsServer *webSocket;
   const char *deviceID;
   int clientID = -1;
-  unsigned long lastMessage = 0;
-  bool awaitingResponse = false;
 
   void handleHKRCommandRegister(const char *dID, int cID) {
     deviceID = dID;
@@ -23,7 +21,7 @@ protected:
 
 public:
   HomekitRemoteDeviceServerSide(WebSocketsServer *ws) {
-    webSocket = webSocket;
+    webSocket = ws;
   }
 
   void sendHKRMessage(const JsonDocument &doc, bool checkResponse = true) {
