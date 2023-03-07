@@ -5,23 +5,29 @@
 
 class TestClass : public HomekitRemoteDevice {
 public:
-  TestClass(WebSocketsClient *ws, const char *deviceID) : HomekitRemoteDevice(ws, deviceID) {}
-  void handleHKRCommand(const JsonDocument &doc) {
-    Serial.printf("handleHKRCommand: %s", doc["command"].as<const char *>());
+  TestClass(WebSocketsClient *ws) : HomekitRemoteDevice(ws, "Test") {}
+  void handleHKRCommand(const char *command, const JsonVariant &payload) {
+    Serial.printf("handleHKRCommand: %s", command);
+  }
+  void handleHKRError(HKR_ERROR error) {
+    Serial.printf("handleHKRError: %i", error);
   }
 };
 
 class TestClass2 : public HomekitRemoteDeviceServerSide {
 public:
-  TestClass2(WebSocketsServer *ws) : HomekitRemoteDeviceServerSide(ws) {}
-  void handleHKRCommand(const JsonDocument &doc) {
-    Serial.printf("handleHKRCommand: %s", doc["command"].as<const char *>());
+  TestClass2(WebSocketsServer *ws) : HomekitRemoteDeviceServerSide(ws, "Test") {}
+  void handleHKRCommand(const char *command, const JsonVariant &payload) {
+    Serial.printf("handleHKRCommand: %s", command);
+  }
+  void handleHKRError(HKR_ERROR error) {
+    Serial.printf("handleHKRError: %i", error);
   }
 };
 
 void setup() {
   // put your setup code here, to run once:
-  new TestClass(new WebSocketsClient(), "TEST_DEVICE");
+  new TestClass(new WebSocketsClient());
   new TestClass2(new WebSocketsServer(81));
 }
 

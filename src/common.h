@@ -11,7 +11,7 @@
 #define HKR_COMMAND_REGISTER "register"
 #define HKR_COMMAND_RESPONSE "response"
 #define HKR_RESPONSE_TIMEOUT 5000 // 5 seconds
-#define HKR_MAX_JSON_DOC_SIZE 256
+#define HKR_MAX_JSON_DOC_SIZE 192
 
 // Errors
 enum HKR_ERROR {
@@ -24,15 +24,15 @@ enum HKR_ERROR {
 };
 
 // Logging
-#define HK_DEBUG_LEVEL_NONE 0
-#define HK_DEBUG_LEVEL_INFO 1
+#define HKR_DEBUG_LEVEL_NONE 0
+#define HKR_DEBUG_LEVEL_INFO 1
 
-#define HK_DEBUG HK_DEBUG_LEVEL_INFO
+#define HKR_DEBUG HKR_DEBUG_LEVEL_INFO
 
-#if HK_DEBUG >= HK_DEBUG_LEVEL_INFO
-    #define HK_LOG_LINE(message, ...) printf(">>> [%7lu][%.2fkb] HomeKit Hub: " message "\n", millis(), (esp_get_free_heap_size() * 0.001f), ##__VA_ARGS__)
+#if HKR_DEBUG >= HKR_DEBUG_LEVEL_INFO
+    #define HKR_LOG_LINE(message, ...) printf(">>> [%7lu][%.2fkb] HKR: " message "\n", millis(), (esp_get_free_heap_size() * 0.001f), ##__VA_ARGS__)
 #else
-    #define HK_LOG_LINE(message, ...)
+    #define HKR_LOG_LINE(message, ...)
 #endif
 
 #endif

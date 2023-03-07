@@ -19,7 +19,7 @@ protected:
       payload.as<JsonVariant>(),
       true,
       [this](bool success) {
-        if (success) HK_LOG_LINE("Registered with HomeKit Hub");
+        if (success) HKR_LOG_LINE("Registered with HomeKit Hub");
         else handleHKRError(HKR_ERROR_CONNECTION_REFUSED);
     });
   }
@@ -50,11 +50,7 @@ public:
     HKRResponseCallback = onResponse;
   }
 
-  void receiveHKRMessage(int id, uint8_t *message) {
-    StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
-    DeserializationError err = deserializeJson(doc, message);
-    if (err) handleHKRError(HKR_ERROR_JSON_DESERIALIZE);
-
+  void receiveHKRMessage(int id, JsonDocument &doc) {
     const char *command = doc[HKR_COMMAND];
     if (strcmp(command, HKR_COMMAND_RESPONSE) == 0) {
       handleHKRResponse(doc[HKR_PAYLOAD].as<bool>());

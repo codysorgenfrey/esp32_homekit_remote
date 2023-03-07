@@ -38,20 +38,22 @@ public:
   }
 
   void sendHKRResponse(bool success) {
-    StaticJsonDocument<2> payload;
+    StaticJsonDocument<8> payload;
     payload.set(success);
     sendHKRMessage(HKR_COMMAND_RESPONSE, payload.as<JsonVariant>(), false);
   }
 
-  bool HKRWebsocketEvent(int id, uint8_t *message) {
+  void HKRWebsocketEvent(int id, uint8_t *message) {
     if (strncmp((const char *)message, "{", 1) == 0) {
-      StaticJsonDocument<48> doc;
-      StaticJsonDocument<24> filter;
-      filter[HKR_DEVICE] = true;
-      DeserializationError err = deserializeJson(doc, message, DeserializationOption::Filter(filter));
-      if (err) handleHKRError(HKR_ERROR_JSON_DESERIALIZE);
+      StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
+      DeserializationError err = deserializeJson(doc, message);
+      if (err) {
+        handleHKRError(HKR_ERROR_JSON_DESERIALIZE);
+        HKR_LOG_LINE("Error: %s", err.c_str());
+        return;
+      }
 
-      if(strcmp(doc[HKR_DEVICE], deviceID) == 0) receiveHKRMessage(id, message);
+      if(strcmp(doc[HKR_DEVICE], deviceID) == 0) receiveHKRMessage(id, doc);
     }
   }
 
@@ -62,7 +64,7 @@ public:
     std::function<void(bool)> onResponse = NULL
   ) = 0;
 
-  virtual void receiveHKRMessage(int id, uint8_t *message) = 0;
+  virtual void receiveHKRMessage(int id, JsonDocument &doc) = 0;
 
   virtual void handleHKRCommand(
     const char *command,

@@ -13,13 +13,13 @@ protected:
   int clientID = -1;
 
   void registerHKRDevice(int cID, const char *dID) {
-    if (dID != deviceID) {
+    if (strcmp(dID, deviceID) != 0) {
       handleHKRError(HKR_ERROR_DEVICE_NOT_REGISTERED);
       return;
     }
     
     clientID = cID;
-    HK_LOG_LINE("Registered %s as HKR device id: %i.", deviceID, clientID);
+    HKR_LOG_LINE("Registered %s as HKR device id: %i.", deviceID, clientID);
     
     sendHKRResponse(true);
   }
@@ -54,11 +54,7 @@ public:
     HKRResponseCallback = onResponse;
   }
 
-  void receiveHKRMessage(int id, uint8_t *message) {
-    StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
-    DeserializationError err = deserializeJson(doc, message);
-    if (err) handleHKRError(HKR_ERROR_JSON_DESERIALIZE);
-
+  void receiveHKRMessage(int id, JsonDocument &doc) {
     const char *command = doc[HKR_COMMAND];
     if (strcmp(command, HKR_COMMAND_RESPONSE) == 0) {
       handleHKRResponse(doc[HKR_PAYLOAD]);
