@@ -12,6 +12,7 @@ protected:
   WebSocketsClient *webSocket;
 
   void registerHKRDevice() {
+    HKR_LOG_LINE("Registering with HomeKit Hub");
     StaticJsonDocument<8> payload;
     payload.set(deviceID);
     sendHKRMessage(
@@ -19,7 +20,7 @@ protected:
       payload.as<JsonVariant>(),
       true,
       [this](bool success) {
-        if (success) HKR_LOG_LINE("Registered with HomeKit Hub");
+        if (success) HKR_LOG_LINE("Registered successfully");
         else handleHKRError(HKR_ERROR_CONNECTION_REFUSED);
     });
   }
