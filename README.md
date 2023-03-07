@@ -5,3 +5,4 @@ Set up by inheriting ```HomekitRemoteDevice``` or ```HomekitRemoteDeviceServerSi
 - Override ```handleHKRCommand```
 - Override ```handleHKRError```
 - Call ```listenForHKRResponse``` in ```loop()```
+- Pass messages to ```HKRMessageRecieved``` from websocket callback.
