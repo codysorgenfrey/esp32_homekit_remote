@@ -10,32 +10,41 @@
 class HomekitRemoteDevice : protected HomekitRemoteBase {
 protected:
   WebSocketsClient *webSocket;
-  const char *deviceID;
-  int clientID = -1;
+
+  void registerHKRDevice() {
+    StaticJsonDocument<92> doc;
+    doc[HKR_DEVICE] = deviceID;
+    doc[HKR_COMMAND] = HKR_COMMAND_REGISTER;
+    sendHKRMessage(doc, true, [this](bool success) {
+      if (success) HK_LOG_LINE("Registered with HomeKit Hub");
+      else handleHKRError(HKR_ERROR_CONNECTION_REFUSED);
+    });
+  }
 
 public:
   HomekitRemoteDevice(WebSocketsClient *ws, const char *dID) {
     webSocket = ws;
     deviceID = dID;
-
-    StaticJsonDocument<92> doc;
-    doc["command"] = HKR_REGISTER_COMMAND;
-    doc["device"] = deviceID;
-    sendHKRMessage(doc);
+    registerHKRDevice();
   }
 
-  void sendHKRMessage(const JsonDocument &doc, bool checkResponse = true) {
+  void sendHKRMessage(
+    const JsonDocument &doc,
+    bool requireResponse = true,
+    std::function<void(bool)> onResponse = NULL
+  ) {
     String message;
     serializeJson(doc, message);
-    if (!webSocket->sendTXT(message)) HK_ERROR_LINE("Error sending message: %s", message);
+    if (!webSocket->sendTXT(message)) handleHKRError(HKR_ERROR_WEBSOCKET_ERROR);
     lastMessage = millis();
-    awaitingResponse = checkResponse;
+    awaitingResponse = requireResponse;
+    HKRResponseCallback = onResponse;
   }
 
   void HKRMessageRecieved(const JsonDocument &doc) {
     const char *command = doc["command"].as<const char *>();
-    if (strcmp(command, HKR_RESPONSE_COMMAND) == 0) {
-      handleHKRCommandResponse();
+    if (strcmp(command, HKR_COMMAND_RESPONSE) == 0) {
+      handleHKRResponse(doc[HKR_PAYLOAD].as<bool>());
     } else {
       handleHKRCommand(doc);
     }
