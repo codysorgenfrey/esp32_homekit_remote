@@ -7,13 +7,17 @@
 #include <ArduinoJson.h>
 #include "HomekitRemoteBase.h"
 
-class HomekitRemoteDeviceServerSide : protected HomekitRemoteBase {
+class HomekitRemoteDeviceServerSide : public HomekitRemoteBase {
 protected:
   WebSocketsServer *webSocket;
   int clientID = -1;
 
-  void registerHKRDevice(const char *dID, int cID) {
-    deviceID = dID;
+  void registerHKRDevice(int cID, const char *dID) {
+    if (dID != deviceID) {
+      handleHKRError(HKR_ERROR_DEVICE_NOT_REGISTERED);
+      return;
+    }
+    
     clientID = cID;
     HK_LOG_LINE("Registered %s as HKR device id: %i.", deviceID, clientID);
     
@@ -21,12 +25,14 @@ protected:
   }
 
 public:
-  HomekitRemoteDeviceServerSide(WebSocketsServer *ws) {
+  HomekitRemoteDeviceServerSide(WebSocketsServer *ws, const char *dID) {
     webSocket = ws;
+    deviceID = dID;
   }
 
   void sendHKRMessage(
-    const JsonDocument &doc,
+    const char *command,
+    const JsonVariant &payload,
     bool requireResponse = true,
     std::function<void(bool)> onResponse = NULL
   ) {
@@ -34,6 +40,11 @@ public:
       handleHKRError(HKR_ERROR_DEVICE_NOT_REGISTERED);
       return;
     }
+
+    StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
+    doc[HKR_DEVICE] = deviceID;
+    doc[HKR_COMMAND] = command;
+    doc[HKR_PAYLOAD] = payload;
 
     String message;
     serializeJson(doc, message);
@@ -43,14 +54,18 @@ public:
     HKRResponseCallback = onResponse;
   }
 
-  void HKRMessageRecieved(int id, const JsonDocument &doc) {
-    const char *command = doc[HKR_COMMAND].as<const char *>();
+  void receiveHKRMessage(int id, uint8_t *message) {
+    StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
+    DeserializationError err = deserializeJson(doc, message);
+    if (err) handleHKRError(HKR_ERROR_JSON_DESERIALIZE);
+
+    const char *command = doc[HKR_COMMAND];
     if (strcmp(command, HKR_COMMAND_RESPONSE) == 0) {
-      handleHKRResponse(doc[HKR_PAYLOAD].as<bool>());
+      handleHKRResponse(doc[HKR_PAYLOAD]);
     } else if (strcmp(command, HKR_COMMAND_REGISTER) == 0) {
-      registerHKRDevice(doc[HKR_DEVICE].as<const char *>(), id);
+      registerHKRDevice(id, doc[HKR_DEVICE]);
     } else {
-      handleHKRCommand(doc);
+      handleHKRCommand(doc[HKR_COMMAND], doc[HKR_PAYLOAD]);
     }
   }
 };

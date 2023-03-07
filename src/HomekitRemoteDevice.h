@@ -7,17 +7,20 @@
 #include <ArduinoJson.h>
 #include "HomekitRemoteBase.h"
 
-class HomekitRemoteDevice : protected HomekitRemoteBase {
+class HomekitRemoteDevice : public HomekitRemoteBase {
 protected:
   WebSocketsClient *webSocket;
 
   void registerHKRDevice() {
-    StaticJsonDocument<92> doc;
-    doc[HKR_DEVICE] = deviceID;
-    doc[HKR_COMMAND] = HKR_COMMAND_REGISTER;
-    sendHKRMessage(doc, true, [this](bool success) {
-      if (success) HK_LOG_LINE("Registered with HomeKit Hub");
-      else handleHKRError(HKR_ERROR_CONNECTION_REFUSED);
+    StaticJsonDocument<8> payload;
+    payload.set(deviceID);
+    sendHKRMessage(
+      HKR_COMMAND_REGISTER,
+      payload.as<JsonVariant>(),
+      true,
+      [this](bool success) {
+        if (success) HK_LOG_LINE("Registered with HomeKit Hub");
+        else handleHKRError(HKR_ERROR_CONNECTION_REFUSED);
     });
   }
 
@@ -29,10 +32,16 @@ public:
   }
 
   void sendHKRMessage(
-    const JsonDocument &doc,
+    const char *command,
+    const JsonVariant &payload,
     bool requireResponse = true,
     std::function<void(bool)> onResponse = NULL
   ) {
+    StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
+    doc[HKR_DEVICE] = deviceID;
+    doc[HKR_COMMAND] = command;
+    doc[HKR_PAYLOAD] = payload;
+
     String message;
     serializeJson(doc, message);
     if (!webSocket->sendTXT(message)) handleHKRError(HKR_ERROR_WEBSOCKET_ERROR);
@@ -41,12 +50,16 @@ public:
     HKRResponseCallback = onResponse;
   }
 
-  void HKRMessageRecieved(const JsonDocument &doc) {
-    const char *command = doc["command"].as<const char *>();
+  void receiveHKRMessage(int id, uint8_t *message) {
+    StaticJsonDocument<HKR_MAX_JSON_DOC_SIZE> doc;
+    DeserializationError err = deserializeJson(doc, message);
+    if (err) handleHKRError(HKR_ERROR_JSON_DESERIALIZE);
+
+    const char *command = doc[HKR_COMMAND];
     if (strcmp(command, HKR_COMMAND_RESPONSE) == 0) {
       handleHKRResponse(doc[HKR_PAYLOAD].as<bool>());
     } else {
-      handleHKRCommand(doc);
+      handleHKRCommand(doc[HKR_COMMAND], doc[HKR_PAYLOAD]);
     }
   }
 };
