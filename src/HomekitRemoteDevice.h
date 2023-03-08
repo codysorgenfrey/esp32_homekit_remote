@@ -11,25 +11,24 @@ class HomekitRemoteDevice : public HomekitRemoteBase {
 protected:
   WebSocketsClient *webSocket;
 
-  void registerHKRDevice() {
+public:
+  void registerHKRDevice(
+    WebSocketsClient *ws,
+    const char *dID,
+    std::function<void(bool)> onResponse = NULL
+  ) {
     HKR_LOG_LINE("Registering with HomeKit Hub");
+    webSocket = ws;
+    deviceID = dID;
+
     StaticJsonDocument<8> payload;
     payload.set(deviceID);
     sendHKRMessage(
       HKR_COMMAND_REGISTER,
       payload.as<JsonVariant>(),
       true,
-      [this](bool success) {
-        if (success) HKR_LOG_LINE("Registered successfully");
-        else handleHKRError(HKR_ERROR_CONNECTION_REFUSED);
-    });
-  }
-
-public:
-  HomekitRemoteDevice(WebSocketsClient *ws, const char *dID) {
-    webSocket = ws;
-    deviceID = dID;
-    registerHKRDevice();
+      onResponse
+    );
   }
 
   void sendHKRMessage(

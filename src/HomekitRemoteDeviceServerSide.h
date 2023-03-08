@@ -12,7 +12,7 @@ protected:
   WebSocketsServer *webSocket;
   int clientID = -1;
 
-  void registerHKRDevice(int cID, const char *dID) {
+  void registerHKRClient(int cID, const char *dID) {
     if (strcmp(dID, deviceID) != 0) {
       handleHKRError(HKR_ERROR_DEVICE_NOT_REGISTERED);
       return;
@@ -22,10 +22,11 @@ protected:
     HKR_LOG_LINE("Registered %s as HKR device id: %i.", deviceID, clientID);
     
     sendHKRResponse(true);
+    handleHKRClientRegistered(cID, dID);
   }
 
 public:
-  HomekitRemoteDeviceServerSide(WebSocketsServer *ws, const char *dID) {
+  void registerHKRDevice(WebSocketsServer *ws, const char *dID) {
     webSocket = ws;
     deviceID = dID;
   }
@@ -59,11 +60,13 @@ public:
     if (strcmp(command, HKR_COMMAND_RESPONSE) == 0) {
       handleHKRResponse(doc[HKR_PAYLOAD]);
     } else if (strcmp(command, HKR_COMMAND_REGISTER) == 0) {
-      registerHKRDevice(id, doc[HKR_DEVICE]);
+      registerHKRClient(id, doc[HKR_DEVICE]);
     } else {
       handleHKRCommand(doc[HKR_COMMAND], doc[HKR_PAYLOAD]);
     }
   }
+
+  void handleHKRClientRegistered(int cID, const char *dID) {}
 };
 
 #endif
